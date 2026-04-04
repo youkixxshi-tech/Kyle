@@ -3,7 +3,6 @@ from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTyp
 import os
 import logging
 
-# logging (Render မှာ log ကြည့်လို့ရ)
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
@@ -20,9 +19,7 @@ async def calculate(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Error ❌")
 
 app = ApplicationBuilder().token(8428492734:AAGI_E83LLQBHaDvpRJw0wWAMCj0aDlrWKM).build()
-
 app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), calculate))
 
 print("Bot is running...")
-
 app.run_polling()
