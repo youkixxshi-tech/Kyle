@@ -15,10 +15,10 @@ async def calculate(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = update.message.text
         result = eval(text)
         await update.message.reply_text(f"Result: {result}")
-    except Exception as e:
+    except Exception:
         await update.message.reply_text("Error ❌")
 
-app = ApplicationBuilder().token(8428492734:AAGI_E83LLQBHaDvpRJw0wWAMCj0aDlrWKM).build()
+app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), calculate))
 
 print("Bot is running...")
