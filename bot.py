@@ -14,7 +14,6 @@ def home():
     return "Bot is Alive!"
 
 def run_web():
-    # Render ရဲ့ Port ကို ဖမ်းယူခြင်း
     port = int(os.environ.get("PORT", 8080))
     app_web.run(host='0.0.0.0', port=port)
 
@@ -33,37 +32,35 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     user_text = update.message.text
-    all_numbers = re.findall(r'\d+', user_text)
-    parsed_numbers = " ".join(all_numbers)
     
+    # တွက်ချက်မှု ပုံစံတွေကို ရှာဖွေခြင်း
     math_patterns = re.findall(r'[0-9+\-*/×÷.\s]{3,}', user_text)
     calc_results = []
+    
     for item in math_patterns:
         item = item.strip()
+        # အပေါင်းအနှုတ် လက္ခဏာ ပါမပါ စစ်ဆေးခြင်း
         if any(op in item for op in "+-*/×÷"):
             res = clean_and_calculate(item)
             if res is not None:
                 if isinstance(res, float): res = round(res, 2)
-                calc_results.append(f"{item} = {res}")
+                # စာသားတွေ မပါဘဲ အဖြေတန်းထုတ်ရန် format ပြင်ခြင်း
+                calc_results.append(f"{res}")
 
-    response_text = ""
-    if parsed_numbers:
-        response_text += f"📋 Extracted:\n`{parsed_numbers}`\n\n"
     if calc_results:
-        response_text += "📊 Result:\n" + "\n".join(calc_results)
-
-    if response_text:
+        # အဖြေကိုပဲ တန်းပြီး ပို့ပေးခြင်း
+        response_text = "\n".join(calc_results)
         try:
-            await update.message.reply_text(response_text, parse_mode='Markdown')
-        except:
-            await update.message.reply_text(response_text.replace("`", ""))
+            await update.message.reply_text(response_text)
+        except Exception as e:
+            print(f"Error: {e}")
 
 if __name__ == "__main__":
     # Website ကို Background မှာ Run ခိုင်းခြင်း
     Thread(target=run_web).start()
     
     # Bot ကို Run ခြင်း
-    print("Bot is starting as a Web Service...")
+    print("Bot is starting...")
     app = Application.builder().token(TOKEN).build()
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.run_polling()
