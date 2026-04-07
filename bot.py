@@ -6,7 +6,7 @@ from simpleeval import simple_eval
 from telegram import Update
 from telegram.ext import Application, MessageHandler, filters, ContextTypes
 
-# --- Website Setup (For Render/24-7) ---
+# --- Website Setup ---
 app_web = Flask('')
 
 @app_web.route('/')
@@ -15,12 +15,11 @@ def home():
 
 def run_web():
     port = int(os.environ.get("PORT", 8080))
-    app_web.run(host='0.0.0.0', port=port)
+    app_web.run(host='0.0.0.0', port=port, debug=False)
 
 # --- Bot Token ---
 TOKEN = "8428492734:AAGI_E83LLQBHaDvpRJw0wWAMCj0aDlrWKM"
 
-# မြန်မာဂဏန်းကို အင်္ဂလိပ်ပြောင်းပေးတာ
 def mm_to_en_numbers(text):
     mm_nums = '၀၁၂၃၄၅၆၇၈၉'
     en_nums = '0123456789'
@@ -31,6 +30,9 @@ def clean_and_calculate(expression):
     expression = mm_to_en_numbers(expression)
     cleaned = expression.replace('×', '*').replace('÷', '/')
     try:
+        # တွက်ချက်မှုက အရမ်းရိုးရှင်းလွန်းရင် (ဥပမာ "250") မတွက်ခိုင်းတော့ဘူး
+        if not any(op in cleaned for op in "+-*/"):
+            return None
         return simple_eval(cleaned)
     except:
         return None
@@ -40,24 +42,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     user_text = update.message.text
-    
-    # မြန်မာဂဏန်းရော အင်္ဂလိပ်ဂဏန်းရော ဖမ်းမယ်
+
+    # --- 🟢 ဒီအချက်က အရေးကြီးဆုံး ပြင်ဆင်ချက်ပါ ---
+    # အကယ်၍ စာသားထဲမှာ English စာလုံး (A-Z) ဒါမှမဟုတ် မြန်မာစာလုံးတွေ ပါနေရင် 
+    # ဒါဟာ ဈေးနှုန်း List လို့ ယူဆပြီး လုံးဝ မတွက်တော့ဘဲ ကျော်သွားပါမယ်။
+    if re.search(r'[a-zA-Z\u1000-\u1021]', user_text):
+        return
+
+    # ဂဏန်းနဲ့ သင်္ချာသင်္ကေတ သီးသန့်ပဲပါတဲ့ စာကိုပဲ ရှာမယ်
     math_patterns = re.findall(r'[0-9၀-၉+\-*/×÷.\s]{3,}', user_text)
     calc_results = []
     
     for item in math_patterns:
         item = item.strip()
-        if any(op in item for op in "+-*/×÷"):
-            res = clean_and_calculate(item)
-            if res is not None:
-                # ဒသမကိန်းဆိုရင် ၂ နေရာပဲ ယူမယ်
-                if isinstance(res, float): res = round(res, 2)
-                calc_results.append(f"{item} = {res}")
+        res = clean_and_calculate(item)
+        if res is not None:
+            if isinstance(res, float): 
+                res = round(res, 2)
+            calc_results.append(f"{item} = {res}")
 
     if calc_results:
         result_str = "\n".join(calc_results)
-        
-        # --- ယောင်္ကျားလေး (Bro) Style သီးသန့် Design ---
         response = (
             f"⚡️ **Calculation Done** ⚡️\n\n"
             f"📟 `{result_str}`\n\n"
@@ -70,10 +75,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(response.replace("*", "").replace("`", ""))
 
 if __name__ == "__main__":
-    # Background မှာ Flask ကို run မယ်
     Thread(target=run_web).start()
     
-    # Bot ကို စမယ်
     print("Bro Style Calculator Bot is starting...")
     app = Application.builder().token(TOKEN).build()
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
