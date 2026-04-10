@@ -28,9 +28,9 @@ def mm_to_en_numbers(text):
 
 def clean_and_calculate(expression):
     expression = mm_to_en_numbers(expression)
+    # ဒီမှာ '/' ကို '÷' အဖြစ်မပြောင်းတော့ဘဲ ÷ ကိုပဲ / ပြောင်းပြီးတွက်ပါမယ်
     cleaned = expression.replace('×', '*').replace('÷', '/')
     try:
-        # တွက်ချက်မှုက အရမ်းရိုးရှင်းလွန်းရင် (ဥပမာ "250") မတွက်ခိုင်းတော့ဘူး
         if not any(op in cleaned for op in "+-*/"):
             return None
         return simple_eval(cleaned)
@@ -43,14 +43,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     user_text = update.message.text
 
-    # --- 🟢 ဒီအချက်က အရေးကြီးဆုံး ပြင်ဆင်ချက်ပါ ---
-    # အကယ်၍ စာသားထဲမှာ English စာလုံး (A-Z) ဒါမှမဟုတ် မြန်မာစာလုံးတွေ ပါနေရင် 
-    # ဒါဟာ ဈေးနှုန်း List လို့ ယူဆပြီး လုံးဝ မတွက်တော့ဘဲ ကျော်သွားပါမယ်။
+    # --- 🟢 ပြင်ဆင်လိုက်တဲ့အပိုင်း ---
+    # ၁။ စာသားထဲမှာ '/' ပါရင် လုံးဝ အလုပ်မလုပ်ခိုင်းတော့ပါဘူး
+    if '/' in user_text:
+        return
+
+    # ၂။ စာလုံး (A-Z) သို့မဟုတ် မြန်မာစာပါရင်လည်း ကျော်သွားမယ်
     if re.search(r'[a-zA-Z\u1000-\u1021]', user_text):
         return
 
-    # ဂဏန်းနဲ့ သင်္ချာသင်္ကေတ သီးသန့်ပဲပါတဲ့ စာကိုပဲ ရှာမယ်
-    math_patterns = re.findall(r'[0-9၀-၉+\-*/×÷.\s]{3,}', user_text)
+    # ဂဏန်းနဲ့ သင်္ချာသင်္ကေတ သီးသန့်ပဲပါတဲ့ စာကိုရှာမယ် (ဒီထဲမှာ '/' ကို ဖယ်ထားပါတယ်)
+    math_patterns = re.findall(r'[0-9၀-၉+\-*×÷.\s]{3,}', user_text)
     calc_results = []
     
     for item in math_patterns:
